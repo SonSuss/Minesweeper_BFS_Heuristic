@@ -23,7 +23,10 @@ get_mines_randomly_2d = np.transpose(get_mines_randomly_2d).tolist()
 untouch_lst = [(x,y) for x in range(x_axis) for y in range(y_axis)]
 untouch_lst.remove((x,y))
 
-# # specific example
+# # # specific example
+# x_axis = 8
+# y_axis = 8
+# mines_number = 10
 # get_mines_randomly_2d= [(3, 1), (3, 5), (3, 6), (4, 0), (2, 4), (3, 4), (2, 7), (4, 1), (7, 7), (5, 6)]
 # untouch_lst = [(x,y) for x in range(x_axis) for y in range(y_axis)]
 # x,y = 5,3
@@ -38,13 +41,15 @@ untouch_lst.remove((x,y))
 #                  [9, 9, 9, 9, 9, 9, 9, -1]])
 # ################################
 
+queue = []
+
 def spread(x,y,grid,queue,around = []):
     for i,j in around:
         a,b = x+i,y+j
         if grid[a][b] == 9:
             check_around(a,b,grid,queue)
             
-def check_around(x,y,grid,queue):
+def check_around(x,y,grid,queue = []):
     if not grid[x][y] == -1:
         count = 0
         check_p = [(-1,-1),(0,-1),(1,-1),(-1,0),(1,0),(-1,1),(0,1),(1,1)]
@@ -64,68 +69,83 @@ def check_around(x,y,grid,queue):
                 untouch_lst.remove((x,y))
         else:
             grid[x][y] = count
-            if [x,y] in untouch_lst:
+            if (x,y) in untouch_lst:
                 untouch_lst.remove((x,y))
-            queue.append([x,y,check_p])
+            queue.append((x,y,check_p))
     return queue ,grid
-    
+
+            
 mine_found = []
-# possibly_chose_positions = []
-def shorten_queue(new_queue,queue= []):
-    for x ,y, ar in new_queue:
-        for i,j in ar:
-            a ,b= x + i,y + j
-            if grid[a][b] not in range(0,9):
-                if (a,b) not in queue and (a,b) not in mine_found:
-                    queue.append((a,b))
+
+def shrink_p(queue):
+    for x , y, p in queue[:]:
+        if p:
+            for i,j in p[:]:
+                a , b = x+i, y+j
+                if (a,b) not in untouch_lst:
+                    p.remove((i,j))
+        else: queue.remove((x,y,p))
     return queue
 
-# BFS form here try test evey possibly choose
 queue, grid = check_around(x,y,grid,[])
-queue = shorten_queue(queue)
-bfs_step_list = [[(x,y),True,grid]]
-step_to_win = [(x,y)]
-timer = 0.0
+queue =  shrink_p(queue)
+steps = [((x,y),grid)]
+steps_to_win = []
 
-# bfs go here 
-def bfs(queue, grid = grid ):
-    start_time = time.time()
-    for x,y in queue:
-        g = grid.copy()
-        if (x,y) in untouch_lst:
-            untouch_lst.remove((x,y))
-            if grid[x][y] == -1:
-                bfs_step_list.append([(x,y),False,g])
-                mine_found.append((x,y))
-            else:
-                new_queue, grid = check_around(x,y,g,[])
-                new_queue = shorten_queue(new_queue ,queue)
-                bfs_step_list.append([(x,y),True,g])
-                step_to_win.append((x,y))
-    end_time = time.time()
-    return end_time - start_time
+# Heuristics
+# check around if number == the left square aka that is the mine, and if the unknow square = mine found then press the left square
+def check_mine_base_on_square_left(queue, grid, mine_found):
+    k = True
+    while k:
+        k= False
+        for x,y ,p in queue[:]:
+            mine = 0
+            not_mine = 0
+            for i,j in p[:]:
+                a,b = x+i,y+j
+                if (a,b) in mine_found:
+                    mine += 1
+                elif (a,b) in untouch_lst:
+                    not_mine += 1
+                else: p.remove((i,j))
+            if mine == grid[x,y]:
+                k= True
+                g= grid.copy()
+                for i,j in p[:]:
+                    a,b = x+i,y+j
+                    if (a,b) not in mine_found and (a,b) in untouch_lst:
+                        new_queue , grid = check_around(a,b,g)
+                        steps.append(((a,b),g))
+                        steps_to_win.append((a,b))
+                        queue += shrink_p(new_queue)
+                queue.remove((x,y,p))
+            elif not_mine <= grid[x][y] - mine:
+                k = True
+                for i,j in p[:]:
+                    a,b = x+i,y+j
+                    if (a,b) not in mine_found:
+                        mine_found.append((a,b))
+                queue.remove((x,y,p))
 
-timer+=bfs(queue)     
-            
-while len(mine_found) < mines_number:
-    if untouch_lst:
-        x,y = untouch_lst[0]
-        untouch_lst.remove((x,y))
-        queue, grid = check_around(x,y,grid,[])
-        queue = shorten_queue(queue)
-        timer+=bfs(queue)
-    else:
-        print("HOW IT CAN HAPPEN ???")
 
 
+start_time = time.time()
+check_mine_base_on_square_left(queue,grid,mine_found)
+end_time = time.time()
+
+
+
+if not mine_found:
+    print("Your first step, step on a number, must choose a random square")
+if len(mine_found) != 50:
+    print("You get a case that u need to make a gacha square to keep moving")
+print("step to win: " + str(steps_to_win))
+print("Time to run: " + str(end_time-start_time))
 def navigate_list(lst):
     current_position = 0
     while True:
-        square, k, grid = bfs_step_list[current_position]
+        square, grid = lst[current_position]
         print("Chosen square: " + str(square))
-        if k:
-            print('Not step on the mine!')
-        else: print('Step on mine!!! DEAD!!')
         print(grid)
         user_input = input("Press 'a' to go backward, 'd' to go forward, or 'q' to quit: ").lower()
         if user_input == 'a':
@@ -138,12 +158,4 @@ def navigate_list(lst):
         else:
             print("Invalid input. Please enter 'a', 'd', or 'q'.")
 
-# print step
-print('Time to win: ' + str(timer))
-print('Step to win:' + str(step_to_win))
-print(len(mine_found))
-navigate_list(bfs_step_list)
-
-
-
-
+navigate_list(steps)
