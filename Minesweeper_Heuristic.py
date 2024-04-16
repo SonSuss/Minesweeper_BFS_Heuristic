@@ -22,27 +22,6 @@ while True:
 get_mines_randomly_2d = np.transpose(get_mines_randomly_2d).tolist()
 untouch_lst = [(x,y) for x in range(x_axis) for y in range(y_axis)]
 untouch_lst.remove((x,y))
-
-# # # specific example
-# x_axis = 8
-# y_axis = 8
-# mines_number = 10
-# get_mines_randomly_2d= [(3, 1), (3, 5), (3, 6), (4, 0), (2, 4), (3, 4), (2, 7), (4, 1), (7, 7), (5, 6)]
-# untouch_lst = [(x,y) for x in range(x_axis) for y in range(y_axis)]
-# x,y = 5,3
-# untouch_lst.remove((x,y))
-# grid = np.array([[9, 9, 9, 9, 9, 9, 9, 9],
-#                  [9, 9, 9, 9, 9, 9, 9, 9],
-#                  [9, 9, 9, 9, -1, 9, 9, -1],
-#                  [9, -1, 9, 9, -1, -1, -1, 9],
-#                  [-1, -1, 9, 9, 9, 9, 9, 9],
-#                  [9, 9, 9, 0, 9, 9, -1, 9],
-#                  [9, 9, 9, 9, 9, 9, 9, 9],
-#                  [9, 9, 9, 9, 9, 9, 9, -1]])
-# ################################
-
-queue = []
-
 def spread(x,y,grid,queue,around = []):
     for i,j in around:
         a,b = x+i,y+j
@@ -74,7 +53,36 @@ def check_around(x,y,grid,queue = []):
             queue.append((x,y,check_p))
     return queue ,grid
 
-            
+queue=[]
+# # # # specific example
+# x_axis , y_axis = 5,5
+# grid = np.array([[9,2,9,9,9],
+#                  [9,9,2,9,2],
+#                  [9,3,3,9,9],
+#                  [1,9,2,2,2],
+#                  [9,1,1,1,9]])
+# not_9_indices = np.where(grid != 9)
+# list_number = list(zip(not_9_indices[0], not_9_indices[1]))
+# untouch_lst = [(x,y) for x in range(x_axis) for y in range(y_axis)]
+# queue=[]
+# for x,y in list_number:
+#     check_p = [(-1,-1),(0,-1),(1,-1),(-1,0),(1,0),(-1,1),(0,1),(1,1)]
+#     for i,j in check_p[:]:
+#         a,b=x+i,y+j
+#         if a in range(0,x_axis) and b in range(0,y_axis):
+#             if grid[a,b] in range(0,9):
+#                 check_p.remove((i,j))
+#         else: check_p.remove((i,j))
+#     queue.append((x,y,check_p))
+#     untouch_lst.remove((x,y))
+# def check_around(x,y,grid,queue = []):
+#     grid[x][y]=0
+#     untouch_lst.remove((x,y))
+#     return [] , grid
+# ################################
+
+# queue = []
+
 mine_found = []
 
 def shrink_p(queue):
@@ -133,7 +141,7 @@ start_time = time.time()
 check_mine_base_on_square_left(queue,grid,mine_found)
 end_time = time.time()
 
-
+print(mine_found)
 
 if not mine_found:
     print("Your first step, step on a number, must choose a random square")
